@@ -1,4 +1,5 @@
 {
-  "group_at_probability": 0,
-  "add_quoter_nickname": true
+  "reply_reference_query": true,
+  "add_quoter_nickname": true,
+  "group_at_probability": 0
 }
