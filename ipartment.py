@@ -1,6 +1,5 @@
 # encoding:utf-8
 
-import os
 import re
 import random
 
@@ -14,8 +13,8 @@ from plugins import *
     name="iPartment",
     desire_priority=88,
     hidden=True,
-    desc="爱情公寓专享插件。",
-    version="1.1",
+    desc="爱情公寓剧本专享插件。",
+    version="1.2",
     author="空心菜",
 )
 class iPartment(Plugin):
@@ -26,13 +25,13 @@ class iPartment(Plugin):
             conf = super().load_config()
             if not conf:
                 raise Exception("[iPartment] config.json not found")
-            # 回复包含引用的消息
+            # 优化引用消息
             self.reply_reference_query = conf.get('reply_reference_query', False)
             if self.reply_reference_query:
                 logger.info("[iPartment] reply_reference_query is on.")
             else:
                 logger.info("[iPartment] reply_reference_query is off.")
-            # 群聊中识别对方身份
+            # 识别对方身份
             self.add_quoter_nickname = conf.get('add_quoter_nickname', False)
             if self.add_quoter_nickname:
                 logger.info("[iPartment] add_quoter_nickname is on.")
@@ -40,7 +39,7 @@ class iPartment(Plugin):
                 logger.info("[iPartment] add_quoter_nickname is off.")
             if self.add_quoter_nickname or self.reply_reference_query:
                 self.handlers[Event.ON_HANDLE_CONTEXT] = self.on_handle_context
-            # 回复消息时随机at
+            # 群聊中机器人回复消息时@对方的概率
             self.group_at_probability = conf.get('group_at_probability', 1)
             if self.group_at_probability < 1:
                 self.handlers[Event.ON_DECORATE_REPLY] = self.on_decorate_reply
@@ -58,13 +57,14 @@ class iPartment(Plugin):
         content = e_context["context"].content
         logger.debug("[iPartment] on_handle_context. content: %s" % content)
         try:
-            # 回复包含引用的消息
+            # 优化引用消息
             if self.reply_reference_query and "」\n- - - - - - -" in content:
                 content = re.sub(r'」\n(- ){6,}-', '」\n前面「」中的内容是引用的消息，新的问题是：', content)
                 logger.debug(f"[iPartment] reference query have been modified.")
-            # 群聊中识别对方身份，并在提示词开头添加”xxx对你说：“
-            if self.add_quoter_nickname and e_context["context"].get("isgroup", False):
-                actual_user_nickname = e_context["context"]["msg"].actual_user_nickname
+            # 识别对方身份，并在提示词开头添加”xxx对你说：“
+            # if self.add_quoter_nickname and e_context["context"].get("isgroup", False):
+            if self.add_quoter_nickname:
+                actual_user_nickname = e_context["context"]["msg"].actual_user_nickname or e_context["context"]["msg"].other_user_nickname
                 add_prefix = f"{actual_user_nickname}对你说："
                 # 确保修改操作的幂等性
                 if not content.startswith(add_prefix):
@@ -79,7 +79,7 @@ class iPartment(Plugin):
         if e_context["reply"].type != ReplyType.TEXT:
             return
         logger.debug("[iPartment] on_decorate_reply.")
-        # 回复消息时随机at
+        # 设置群聊中机器人回复消息时@对方的概率
         try:
             need_at = True if random.random() < self.group_at_probability else False
             if not need_at:
@@ -89,4 +89,4 @@ class iPartment(Plugin):
             logger.warn(f"[iPartment] error occurred: {e}.")
 
     def get_help_text(self, **kwargs):
-        return "爱情公寓专享插件。"
+        return "爱情公寓剧本专享插件。"
